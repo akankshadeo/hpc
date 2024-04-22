@@ -1,140 +1,76 @@
-#include <iostream>
-#include <chrono>
-#include <cstdlib>
-#include <omp.h>
-
+#include<iostream>
+#include<stdlib.h>
+#include<omp.h>
 using namespace std;
-
-void merge(int arr[], int l, int m, int r)
+void mergesort(int a[],int i,int j);
+void merge(int a[],int i1,int j1,int i2,int j2);
+void mergesort(int a[],int i,int j)
 {
-    int i, j, k;
-    int n1 = m - l + 1;
-    int n2 = r - m;
-
-    int *L = new int[n1];
-    int *R = new int[n2];
-
-    for (i = 0; i < n1; ++i)
+    int mid;
+    if(i<j)
     {
-        L[i] = arr[l + i];
-    }
-    for (j = 0; j < n2; ++j)
-    {
-        R[j] = arr[m + 1 + j];
-    }
-
-    i = 0;
-    j = 0;
-    k = l;
-
-    while (i < n1 && j < n2)
-    {
-        if (L[i] <= R[j])
-        {
-            arr[k] = L[i];
-            ++i;
-        }
-        else
-        {
-            arr[k] = R[j];
-            ++j;
-        }
-        ++k;
-    }
-
-    while (i < n1)
-    {
-        arr[k] = L[i];
-        ++i;
-        ++k;
-    }
-
-    while (j < n2)
-    {
-        arr[k] = R[j];
-        ++j;
-        ++k;
-    }
-
-    delete[] L;
-    delete[] R;
-}
-
-void mergeSort(int arr[], int l, int r)
-{
-    if (l < r)
-    {
-        int m = l + (r - l) / 2;
+        mid=(i+j)/2;
         #pragma omp parallel sections
         {
             #pragma omp section
             {
-                mergeSort(arr, l, m);
+                mergesort(a,i,mid);
             }
             #pragma omp section
             {
-                mergeSort(arr, m + 1, r);
+                mergesort(a,mid+1,j);
             }
         }
-
-        merge(arr, l, m, r);
+        merge(a,i,mid,mid+1,j);
     }
 }
-
-void printArray(int arr[], int size)
+void merge(int a[],int i1,int j1,int i2,int j2)
 {
-    for (int i = 0; i < size; ++i)
+    int temp[1000];
+    int i,j,k;
+    i=i1;
+    j=i2;
+    k=0;
+    while(i<=j1 && j<=j2)
     {
-        cout << arr[i] << " ";
+        if(a[i]<a[j])
+        {
+            temp[k++]=a[i++];
+        }
+        else
+        {
+            temp[k++]=a[j++];
+	}
     }
-    cout << endl;
+    while(i<=j1)
+    {
+        temp[k++]=a[i++];
+    }
+    while(j<=j2)
+    {
+        temp[k++]=a[j++];
+    }
+    for(i=i1,j=0;i<=j2;i++,j++)
+    {
+        a[i]=temp[j];
+    }
 }
-
 int main()
 {
-    int n;
-    cout << "Enter the size of the array: ";
-    cin >> n;
-
-    int *arr = new int[n];
-    srand(time(0));
-    for (int i = 0; i < n; ++i)
+    int *a,n,i;
+    cout<<"\n enter total no of elements=>";
+    cin>>n;
+    a= new int[n];
+    cout<<"\n enter elements=>\n";
+    for(i=0;i<n;i++)
     {
-        arr[i] = rand() % 100;
+        cin>>a[i];
     }
-
-    cout << "Original array: ";
-    printArray(arr, n);
-
-
-    // Merge Sort
-    auto start = chrono::high_resolution_clock::now();
-    mergeSort(arr, 0, n - 1);
-    auto end = chrono::high_resolution_clock::now();
-
-    cout << "Sequential Merge Sorted array: ";
-    printArray(arr, n);
-
-    auto sequentialMergeTime = chrono::duration_cast<chrono::microseconds>(end - start).count();
-
-    // Parallel Merge Sort
-    start = chrono::high_resolution_clock::now();
-    #pragma omp parallel
+    mergesort(a, 0, n-1);
+    cout<<"\n sorted array is=>";
+    for(i=0;i<n;i++)
     {
-        #pragma omp single
-        {
-            mergeSort(arr, 0, n - 1);
-        }
+        cout<<"\n"<<a[i];
     }
-    end = chrono::high_resolution_clock::now();
-
-    cout << "Parallel Merge Sorted array: ";
-    printArray(arr, n);
-
-    auto parallelMergeTime = chrono::duration_cast<chrono::microseconds>(end - start).count();
-
-    // Performance measurement
-    cout << "Sequential Merge Sort Time: " << sequentialMergeTime << " microseconds" << endl;
-    cout << "Parallel Merge Sort Time: " << parallelMergeTime << " microseconds" << endl;
-
+    return 0;
 }
